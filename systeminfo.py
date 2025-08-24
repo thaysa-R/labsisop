@@ -1,9 +1,10 @@
 import json
+import os
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from datetime import datetime
 
-# --- Alunos devem implementar as funções abaixo --- #
+# --- Funções --- #
 
 def get_datetime():
     return 0
@@ -28,16 +29,86 @@ def get_os_version():
     return "TODO"
 
 def get_process_list():
-    return []  # lista de { "pid": int, "name": str }
+    result = []
+    for entry in os.listdir("/proc"):
+        if entry.isdigit():
+            pid = int(entry)
+            with open(f"/proc/{pid}/comm") as f:
+                name = f.read().strip()
+            result.append({"pid": pid, "name": name})
+            
+    return result  # lista de { "pid": int, "name": str }
 
 def get_disks():
-    return []  # lista de { "device": str, "size_mb": int }
+    result = []
+    for entry in os.listdir("/sys/block"):
+        if not entry.startswith("ram"):
+            size_mb = -1
+            with open(f"/sys/block/{entry}/size") as f:
+                sectors_count = int(f.readline().strip())
+                size_b = sectors_count + 512
+                size_mb = size_b // (1024 * 1024) 
+            result.append({"device": entry, "size_mb": size_mb})
+            
+    return result  # lista de { "device": str, "size_mb": int }
 
 def get_usb_devices():
-    return []  # lista de { "port": str, "description": str }
+    # Não há dispositivos USB nesse caso
+    result = []
+    for entry in os.listdir("/sys/bus/usb/devices"):
+        product = None
+        manufacturer = None
+        
+        product_path = f"/sys/bus/usb/devices/{entry}/product"
+        if os.path.exists(product_path):
+            with open(f"/sys/bus/usb/devices/{entry}/product") as f:
+                product = f.read().strip()
+                
+        manufacturer_path = f"/sys/bus/usb/devices/{entry}/manufacturer"
+        if os.path.exists(manufacturer_path):
+            with open(manufacturer_path) as f:
+                manufacturer = f.read().strip()
+                
+        if product:
+            description = f"{product}"
+            if manufacturer:
+                description = f"{description} from {manufacturer}"
+                
+            result.append({"port": entry, "description": description})
+    
+    return result  # lista de { "port": str, "description": str }
 
 def get_network_adapters():
-    return []  # lista de { "interface": str, "ip_address": str }
+    result = []
+    
+    # Precisa dos IPs associadas às interfaces de rede
+    routes = []
+    with open("/proc/net/route") as f:
+            routes = f.readlines()
+    
+    for entry in os.listdir("/sys/class/net"):
+        if os.path.isdir(f"/sys/class/net/{entry}"):
+            # Procura IP associado
+            ip = ""
+            for line in routes:
+                fields = line.split()
+                iface = fields[0].strip()
+                if iface == entry:
+                    ip = fields[1]
+                    ip = ip.strip()
+                    
+                    # Está em HEX, converte para X.X.X.X
+                    n = int(ip, 16)
+                    b1 = (n)       & 0xFF
+                    b2 = (n >> 8)  & 0xFF
+                    b3 = (n >> 16) & 0xFF
+                    b4 = (n >> 24) & 0xFF
+                    ip = f"{b1}.{b2}.{b3}.{b4}"
+
+                    result.append({"interface": entry, "ip_address": ip})
+                    break
+    
+    return result  # lista de { "interface": str, "ip_address": str }
 
 # --- Servidor HTTP --- #
 
