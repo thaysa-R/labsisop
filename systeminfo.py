@@ -7,10 +7,23 @@ from datetime import datetime
 # --- Funções --- #
 
 def get_datetime():
-    return 0
+    with open("/proc/driver/rtc") as f:
+        data = f.read()
+        data = data.strip().split()
+        for i, cmd in enumerate(data):
+            if cmd == "rtc_time":
+                time = data[i+2]
+            if cmd == "rtc_date":
+                date = data[i+2]
+
+        return (f"{date} {time}")
 
 def get_uptime():
-    return 0  # TODO
+    with open("/proc/uptime") as f:
+        data = f.read()
+        data = data.strip().split()
+        uptime = float(data[0])
+        return uptime
 
 def get_cpu_info():
     return {
@@ -26,7 +39,27 @@ def get_memory_info():
     }
 
 def get_os_version():
-    return "TODO"
+    version = []
+
+    with open("/proc/version") as f:
+        data = f.read()
+
+    for c in enumerate(data):
+        version.append(c)
+        if c == ")":
+            break
+
+    version_str = "".join(version)
+
+    smp_part = ""
+    words = data.strip().split()
+    for idx, word in enumerate(words):
+        if word == "SMP":
+            smp_part = " ".join(words[idx:])
+            break
+
+    final_version = f"{version_str} {smp_part}"
+    return final_version
 
 def get_process_list():
     result = []
