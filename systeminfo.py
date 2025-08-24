@@ -2,26 +2,34 @@ import json
 import os
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from datetime import datetime
+import time
 
 # --- Funções --- #
 
 def get_datetime():
-    with open("/proc/driver/rtc") as f:
+    btime = 0
+    with open("/proc/stat") as f:
         data = f.read()
         data = data.strip().split()
-        for i, cmd in enumerate(data):
-            if cmd == "rtc_time":
-                time = data[i+2]
-            if cmd == "rtc_date":
-                date = data[i+2]
+    
+        for idx, val in enumerate(data):
+            if val == "btime":
+                btime = int(data[idx + 1])
+                break
 
-        return (f"{date} {time}")
+        uptime = get_uptime()
+
+        current_timestamp = btime + int(uptime)
+
+        tm = time.gmtime(current_timestamp)
+
+        current_datetime = f"{tm.tm_year:04d}-{tm.tm_mon:02d}-{tm.tm_mday:02d} " \
+                        f"{tm.tm_hour:02d}:{tm.tm_min:02d}:{tm.tm_sec:02d}"
+        return current_datetime
 
 def get_uptime():
     with open("/proc/uptime") as f:
-        data = f.read()
-        data = data.strip().split()
+        data = f.read().strip().split()
         uptime = float(data[0])
         return uptime
 
@@ -38,28 +46,20 @@ def get_memory_info():
         "used_mb": 0
     }
 
+
 def get_os_version():
-    version = []
-
     with open("/proc/version") as f:
-        data = f.read()
+        data = f.read().strip()
 
-    for c in enumerate(data):
-        version.append(c)
-        if c == ")":
-            break
+    idx = data.find(")")
+    version_str = data[:idx+1]
 
-    version_str = "".join(version)
+    idx = data.find("#")
+    hashtag_part = data[idx:]
 
-    smp_part = ""
-    words = data.strip().split()
-    for idx, word in enumerate(words):
-        if word == "SMP":
-            smp_part = " ".join(words[idx:])
-            break
-
-    final_version = f"{version_str} {smp_part}"
+    final_version = f"{version_str} {hashtag_part}"
     return final_version
+
 
 def get_process_list():
     result = []
@@ -69,7 +69,7 @@ def get_process_list():
             with open(f"/proc/{pid}/comm") as f:
                 name = f.read().strip()
             result.append({"pid": pid, "name": name})
-            
+
     return result  # lista de { "pid": int, "name": str }
 
 def get_disks():
@@ -117,7 +117,7 @@ def get_network_adapters():
     # Precisa dos IPs associadas às interfaces de rede
     routes = []
     with open("/proc/net/route") as f:
-            routes = f.readlines()
+        routes = f.readlines()
     
     for entry in os.listdir("/sys/class/net"):
         if os.path.isdir(f"/sys/class/net/{entry}"):
