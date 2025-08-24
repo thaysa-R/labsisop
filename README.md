@@ -1,6 +1,65 @@
 # Descrição do funcionamento básico do programa
 
-TO DO: quando todos finalizarem suas funções
+### Ativação do Python no Buildroot
+No menu do Buildroot:
+Target Packages -> Interpreter languages and scripting -> [*] python3
+
+
+### Arquivo Python principal
+
+Crie um arquivo `systeminfo.py` na raiz do projeto Codespaces (root) com as funções implementadas.
+
+
+### Script de inicialização no target
+
+Crie um arquivo `S51systeminfo.sh` dentro de `custom-scripts/`:
+
+```bash
+#!/bin/sh
+case "$1" in
+    start)
+        /usr/bin/python3 /usr/bin/systeminfo.py & exit 0
+        ;;
+    stop)
+        exit 1
+        ;;
+    *)
+        exit 1
+        ;;
+esac
+exit 0
+```
+
+### Configuração do pre-build
+
+No `pre-build.sh`, adicione:
+
+```bash
+cp $BASE_DIR/../custom-scripts/S51systeminfo.sh $BASE_DIR/target/etc/init.d
+chmod +x $BASE_DIR/target/etc/init.d/S51systeminfo.sh
+```
+
+### Copiando o script Python para o target
+
+> chmod +x output/target/usr/bin/systeminfo.py
+> cp systeminfo.py output/target/usr/bin/
+
+### Compile:
+
+> make
+
+### Inicie a target no QEMU:
+
+> ./start_qemu.sh
+
+### Teste na host
+
+Faça uma requisição HTTP para o endpoint `/status`:
+
+> curl http://192.168.1.10:8080/status
+
+
+Você deve receber o payload JSON contendo as informações do sistema.
 
 # Capturas de tela (screenshots) das respostas obtidas pelo endpoint /status
 
