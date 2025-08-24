@@ -79,7 +79,7 @@ def get_disks():
             size_mb = -1
             with open(f"/sys/block/{entry}/size") as f:
                 sectors_count = int(f.readline().strip())
-                size_b = sectors_count + 512
+                size_b = sectors_count * 512
                 size_mb = size_b // (1024 * 1024) 
             result.append({"device": entry, "size_mb": size_mb})
             
