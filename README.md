@@ -19,7 +19,9 @@ O datetime pode ser encontrado através do comando:
 cat /proc/driver/rtc
 ```
 
-Esse arquivo contém informações do RTC (Real-Time Clock) do hardware, e coletamos as informações de "rtc_time" e "rtc_date".
+No nosso target Buildroot, o arquivo `/proc/driver/rtc` não existe, então não podemos obter a data/hora diretamente do RTC.
+Então usamos uma solução alternativa para calcular o datetime usando o `btime` do `/proc/stat` que contém o timestamp do boot em segundos desde 1970 (Unix time) e o `/proc/uptime` que é o uptime do sistema. Somamos btime + uptime e conseguimos o timestamp atual do sistema convertendo o em data e hora legível através da biblioteca `time` do Python, que faz parte da Standard Library.
+
 
 ## uptime_seconds
 
