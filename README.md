@@ -41,8 +41,9 @@ chmod +x $BASE_DIR/target/etc/init.d/S51systeminfo.sh
 
 ### Copiando o script Python para o target
 
-> chmod +x output/target/usr/bin/systeminfo.py
 > cp systeminfo.py output/target/usr/bin/
+
+> chmod +x output/target/usr/bin/systeminfo.py
 
 ### Compile:
 
