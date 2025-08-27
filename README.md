@@ -96,12 +96,32 @@ cat /proc/uptime
 Ele é o primeiro valor a ser exibido, enquanto o segundo é o tempo que o sistema ficou ocioso.
 
 ## cpu
+[The /proc Filesystem](https://docs.kernel.org/filesystems/proc.html#cpuinfo)
 
-TO DO
+O modelo e a frequência da CPU são obtidos através do comando:
+
+```bash
+cat /proc/cpuinfo
+```
+
+Para o uso da CPU (percentual) não existe um comando direto, ele é calculado lendo os tempos de atividade da CPU usando o comando:
+
+```bash
+cat /proc/stat
+```
 
 ## memory
+[The /proc Filesystem](https://docs.kernel.org/filesystems/proc.html#meminfo)
 
-TO DO
+Informações de memória total e memória usada:
+
+```bash
+cat /proc/meminfo 
+```
+Extraimos os valores de memória total, livre, buffers, cache, memória recuperável e compartilhada, e calculamos a memória usada com base em uma aproximação comum:
+used_kb = total_kb - free_kb - buffers_kb - cached_kb - sreclaimable_kb + shmem_kb
+
+Por fim, Os valores são convertidos de kilobytes para megabytes: used_mb = used_kb /1024
 
 ## os_version
 
