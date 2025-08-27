@@ -34,16 +34,71 @@ def get_uptime():
         return uptime
 
 def get_cpu_info():
+    model = ""
+    speed_mhz = 0
+    with open("/proc/cpuinfo") as f:
+        for line in f:
+            if line.startswith("model name"):
+                model = line.split(":", 1)[1].strip()
+            elif line.startswith("cpu MHz"):
+                speed_mhz = float(line.split(":", 1)[1].strip())
+            if model and speed_mhz:
+                break
+
+    def get_cpu_times():
+        with open("/proc/stat") as f:
+            for line in f:
+                if line.startswith("cpu "):
+                    fields = line.strip().split()
+                    times = list(map(int, fields[1:]))
+                    return times
+        return [0]*10
+
+    # Uso da CPU
+    t1 = get_cpu_times()
+    time.sleep(0.1)
+    t2 = get_cpu_times()
+    idle1 = t1[3] + t1[4]
+    idle2 = t2[3] + t2[4]
+    total1 = sum(t1)
+    total2 = sum(t2)
+    total_diff = total2 - total1
+    idle_diff = idle2 - idle1
+    usage_percent = 0.0
+    if total_diff > 0:
+        usage_percent = 100.0 * (total_diff - idle_diff) / total_diff
+
     return {
-        "model": "TODO",
-        "speed_mhz": 0,
-        "usage_percent": 0.0
+        "model": model,
+        "speed_mhz": speed_mhz,
+        "usage_percent": round(usage_percent, 2)
     }
 
 def get_memory_info():
+    meminfo = {}
+    with open("/proc/meminfo") as f:
+        for line in f:
+            parts = line.split(":")
+            if len(parts) == 2:
+                key = parts[0].strip()
+                value = parts[1].strip().split()[0]
+                meminfo[key] = int(value)
+
+    total_kb = meminfo.get("MemTotal", 0)
+    free_kb = meminfo.get("MemFree", 0)
+    buffers_kb = meminfo.get("Buffers", 0)
+    cached_kb = meminfo.get("Cached", 0)
+    sreclaimable_kb = meminfo.get("SReclaimable", 0)
+    shmem_kb = meminfo.get("Shmem", 0)
+
+    used_kb = total_kb - free_kb - buffers_kb - cached_kb - sreclaimable_kb + shmem_kb #Calculo feito com aproximação comum
+    
+    # kilobytes (kB) para megabytes (MB)
+    total_mb = total_kb // 1024
+    used_mb = used_kb // 1024
     return {
-        "total_mb": 0,
-        "used_mb": 0
+        "total_mb": total_mb,
+        "used_mb": used_mb
     }
 
 
